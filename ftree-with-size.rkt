@@ -11,6 +11,7 @@
 ;; [o] 2013-05-15: in FTree, replace middle FTree of Node3's 
 ;;       with FTree of Three's
 ;; [o] 2013-05-17: mk-deepR/L create Deep structures with no size
+;; [o] 2013-05-17: parameterize size and size combining ops
 
 
 ;;; A [23Treeof X] is one of:
