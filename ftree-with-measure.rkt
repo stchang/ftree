@@ -3,7 +3,7 @@
 (provide mk-ftree empty-ft ft-empty? 
          ft-consL ft-consR 
          ft-hd+tlL ft-hd+tlR ft-hdL ft-tlL ft-hdR ft-tlR
-         ft-split)
+         ft-append ft-split)
 
 ; 2-3 finger trees, from Hinze and Paterson 2006 JFP paper
 ;; implements functional, persistent sequences 
@@ -295,16 +295,14 @@
   (cond [(ft-empty? ft1) ft2]
         [(ft-empty? ft2) ft1]
         [else 
-;         (match-define (ftree ∅1 sz1 ⊕1 FT1) ft1)
-;         (match-define (ftree ∅2 sz2 ⊕2 FT2) ft2)
          (match* (ft1 ft2)
-           [((ftree _ _ _ (Single a)) _) (ft-consL a ft2)]
-           [(_ (ftree _ _ _ (Single a))) (ft-consR a ft1)]
-           [((ftree _ sz ⊕ FT1) (ftree _ _ _ FT2))
-            (FT-append sz ⊕ FT1 FT2)])]))
+           [((ftree ∅ sz ⊕ FT1) (ftree _ _ _ FT2))
+            (ftree ∅ sz ⊕ (FT-append sz ⊕ FT1 FT2))])]))
 
 (define (FT-append sz ⊕ FT1 FT2)
   (match* (FT1 FT2)
+    [((Single x) _) (consL sz ⊕ x FT2)]
+    [(_ (Single x)) (consR sz ⊕ x FT1)]
     [((Deep v1 l1 m1 r1) (Deep v2 l2 m2 r2))
      (Deep (⊕ v1 v2) l1 (node-combine sz ⊕ m1 r1 l2 m2) r2)]))
 (define (node-combine sz ⊕ m1 dig1 dig2 m2)
@@ -334,7 +332,7 @@
        [(Three c d e)
         (FT-append sz ⊕ 
                    (consR sz ⊕ (Node2 (⊕ (sz a) (sz b)) a b) m1)
-                   (consL sz ⊕ (Node2 (⊕ (sz c) (sz d) (sz e)) c d e) m2))]
+                   (consL sz ⊕ (Node3 (⊕ (sz c) (sz d) (sz e)) c d e) m2))]
        [(Four c d e f)
         (FT-append sz ⊕ 
                    (consR sz ⊕ (Node3 (⊕ (sz a) (sz b) (sz c)) a b c) m1)
@@ -363,7 +361,7 @@
        [(One e)
         (FT-append sz ⊕ 
                    (consR sz ⊕ (Node2 (⊕ (sz a) (sz b)) a b) m1)
-                   (consL sz ⊕ (Node2 (⊕ (sz c) (sz d) (sz e)) c d e) m2))]
+                   (consL sz ⊕ (Node3 (⊕ (sz c) (sz d) (sz e)) c d e) m2))]
        [(Two e f)
         (FT-append sz ⊕ 
                    (consR sz ⊕ (Node3 (⊕ (sz a) (sz b) (sz c)) a b c) m1)

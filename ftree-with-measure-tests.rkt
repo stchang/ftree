@@ -4,12 +4,14 @@
 
 ;; testing cons/hd/tl (ie using ftree as deque) -------------------------------
 
+;; build-dequeL size: result is deque with elems size-1 ... 1
 (define (build-dequeL size f)
   (let loop ([n size])
     (if (zero? n)
         empty-ft
         (let ([nsub1 (sub1 n)])
           (ft-consL (f nsub1) (loop nsub1))))))
+;; build-dequeR size: result is deque with elems 1 ... size-1
 (define (build-dequeR size f)
   (let loop ([n size])
     (if (zero? n)
@@ -30,15 +32,15 @@
         (+ (ft-hdR dq) (loop (add1 n) (ft-tlR dq))))))
 
 (define size 1030)
-(define dL (build-dequeL size (λ (x) x)))
-(define dR (build-dequeR size (λ (x) x)))
+(define dqL (build-dequeL size (λ (x) x)))
+(define dqR (build-dequeR size (λ (x) x)))
 (check-true
  (for/and ([thresh size])
-   (= (sumR thresh dL)
+   (= (sumR thresh dqL)
       (for/sum ([n thresh]) n))))
 (check-true
  (for/and ([thresh size])
-   (= (sumL thresh dR)
+   (= (sumL thresh dqR)
       (for/sum ([n thresh]) n))))
 
 ;; alternative testing for cons/hd/tl -----------------------------------------
@@ -72,52 +74,87 @@
         (let-values ([(hd tl) (ft-hd+tlR dq)])
           (+ hd (loop (add1 n) tl))))))
 
-(define dL2 (build-dequeL2 size (λ (x) x)))
-(define dR2 (build-dequeR2 size (λ (x) x)))
+(define dqL2 (build-dequeL2 size (λ (x) x)))
+(define dqR2 (build-dequeR2 size (λ (x) x)))
 (check-true
  (for/and ([thresh size])
-   (= (sumR2 thresh dL2)
+   (= (sumR2 thresh dqL2)
       (for/sum ([n thresh]) n))))
 (check-true
  (for/and ([thresh size])
-   (= (sumL2 thresh dR2)
+   (= (sumL2 thresh dqR2)
       (for/sum ([n thresh]) n))))
 
 ;; testing append ----------------------------------------
 
-;(define size/2 size)
-;(define d1 (build-deque size/2 (λ (x) x)))
-;(define d2 (build-deque size/2 (λ (x) (+ x size/2))))
-;(define dapp (append d1 d2))
-;(define d1front (build-deque-front size/2 (λ (x) x)))
-;(define d2front (build-deque-front size/2 (λ (x) (+ x size/2))))
-;(define dappfront (append d2front d1front))
-;(check-true
-; (for/and ([thresh size])
-;   (= (sum-front-x thresh dapp)
-;      (sum-rear-x thresh dappfront)
-;      (for/sum ([n thresh]) n))))
-;
-;
-;(define (build-deque-with-append n f) ; n = size
-;  (if (<= n 2)
-;      (enqueue (f (sub1 n)) (enqueue (f (- n 2)) empty))
-;      (let ([n/2 (/ n 2)])
-;        (append (build-deque-with-append n/2 (λ (x) (f x)))
-;                (build-deque-with-append n/2 (λ (x) (+ n/2 (f x))))))))
-;(define size2 256)
-;(define d-with-append1 (build-deque-with-append size2 (λ (x) x)))
-;(define d-with-append2 (build-deque-with-append size2 (λ (x) (+ x size2))))
-;(define d-with-append (append d-with-append1 d-with-append2))
-;#;(let loop ([d d-with-append])
-;  (unless (empty? d)
-;    (displayln (head d))
-;    (loop (tail d))))
-;(check-true
-; (for/and ([thresh (* 2 size2)])
-;   (= (sum-front-x thresh d-with-append)
-;      (for/sum ([n thresh]) n))))
-;
+;; single append --------------------
+
+(define size/2 (/ size 2))
+(define dqL/2a (build-dequeL size/2 (λ (x) x)))
+(define dqL/2b (build-dequeL size/2 (λ (x) (+ x size/2))))
+(check-true
+ (for/and ([thresh size/2])
+   (= (sumR2 thresh dqL/2a)
+      (for/sum ([n thresh]) n))))
+(check-true
+ (for/and ([thresh size/2])
+   (= (sumR2 thresh dqL/2b)
+      (for/sum ([n thresh]) (+ n size/2)))))
+(define dqLapp (ft-append dqL/2b dqL/2a))
+(check-true
+ (for/and ([thresh size])
+   (= (sumR thresh dqLapp)
+      (for/sum ([n thresh]) n))))
+
+(define dqR/2a (build-dequeR size/2 (λ (x) x)))
+(define dqR/2b (build-dequeR size/2 (λ (x) (+ x size/2))))
+(check-true
+ (for/and ([thresh size/2])
+   (= (sumL2 thresh dqR/2a)
+      (for/sum ([n thresh]) n))))
+(check-true
+ (for/and ([thresh size/2])
+   (= (sumL2 thresh dqR/2b)
+      (for/sum ([n thresh]) (+ n size/2)))))
+(define dqRapp (ft-append dqR/2a dqR/2b))
+(check-true
+ (for/and ([thresh size])
+   (= (sumL thresh dqRapp)
+      (for/sum ([n thresh]) n))))
+
+;; multi-append --------------------
+(define (build-deque/appendL n f) ; n = size, must be power of 2
+  (if (<= n 2)
+      (ft-consL (f (sub1 n)) (ft-consL (f (- n 2)) empty-ft))
+      (let ([n/2 (/ n 2)])
+        (ft-append 
+         (build-deque/appendL n/2 (λ (x) (+ n/2 (f x))))
+         (build-deque/appendL n/2 (λ (x) (f x)))))))
+(define sizepow2 512)
+(define dqL/append1 (build-deque/appendL sizepow2 (λ (x) x)))
+(define dqL/append2 (build-deque/appendL sizepow2 (λ (x) (+ x sizepow2))))
+(define dqL/append (ft-append dqL/append2 dqL/append1))
+(check-true
+ (for/and ([thresh (* 2 sizepow2)])
+   (= (sumR thresh dqL/append)
+      (for/sum ([n thresh]) n))))
+
+(define (build-deque/appendR n f) ; n = size, must be power of 2
+  (if (<= n 2)
+      (ft-consR (f (sub1 n)) (ft-consR (f (- n 2)) empty-ft))
+      (let ([n/2 (/ n 2)])
+        (ft-append 
+         (build-deque/appendR n/2 (λ (x) (f x)))
+         (build-deque/appendR n/2 (λ (x) (+ n/2 (f x))))))))
+(define dqR/append1 (build-deque/appendR sizepow2 (λ (x) x)))
+(define dqR/append2 (build-deque/appendR sizepow2 (λ (x) (+ x sizepow2))))
+(define dqR/append (ft-append dqR/append1 dqR/append2))
+(check-true
+ (for/and ([thresh (* 2 sizepow2)])
+   (= (sumL thresh dqR/append)
+      (for/sum ([n thresh]) n))))
+
+
 ;(define (log2 x) (/ (log x) (log 2)))
 ;;; -------- depth analysis --------
 ;;;- only way to get Deep structures is to append two Shallows of size >= 2
