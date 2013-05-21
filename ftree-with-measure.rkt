@@ -300,13 +300,84 @@
          (match* (ft1 ft2)
            [((ftree _ _ _ (Single a)) _) (ft-consL a ft2)]
            [(_ (ftree _ _ _ (Single a))) (ft-consR a ft1)]
-           [((ftree _ _ ⊕ FT1) (ftree _ _ _ FT2))
-            (FT-append ⊕ FT1 FT2)])]))
+           [((ftree _ sz ⊕ FT1) (ftree _ _ _ FT2))
+            (FT-append sz ⊕ FT1 FT2)])]))
 
-;(define (FT-append ⊕ FT1 FT2)
-;  (match* (FT1 FT2)
-;    [((Deep v1 l1 m1 r1) (Deep v2 l2 m2 r2))
-     
+(define (FT-append sz ⊕ FT1 FT2)
+  (match* (FT1 FT2)
+    [((Deep v1 l1 m1 r1) (Deep v2 l2 m2 r2))
+     (Deep (⊕ v1 v2) l1 (node-combine sz ⊕ m1 r1 l2 m2) r2)]))
+(define (node-combine sz ⊕ m1 dig1 dig2 m2)
+  (match dig1
+    [(One a)
+     (match dig2
+       [(One b)
+        (FT-append sz ⊕ (consR sz ⊕ (Node2 (⊕ (sz a) (sz b)) a b) m1) m2)]
+       [(Two b c)
+        (FT-append sz ⊕ (consR sz ⊕ (Node3 (⊕ (sz a) (sz b) (sz c)) a b c) m1) m2)]
+       [(Three b c d)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node2 (⊕ (sz a) (sz b)) a b) m1)
+                   (consL sz ⊕ (Node2 (⊕ (sz c) (sz d)) c d) m2))]
+       [(Four b c d e)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node2 (⊕ (sz a) (sz b)) a b) m1)
+                   (consL sz ⊕ (Node3 (⊕ (sz c) (sz d) (sz e)) c d e) m2))])]
+    [(Two a b)
+     (match dig2
+       [(One c)
+        (FT-append sz ⊕ (consR sz ⊕ (Node3 (⊕ (sz a) (sz b) (sz c)) a b c) m1) m2)]
+       [(Two c d)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node2 (⊕ (sz a) (sz b)) a b) m1)
+                   (consL sz ⊕ (Node2 (⊕ (sz c) (sz d)) c d) m2))]
+       [(Three c d e)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node2 (⊕ (sz a) (sz b)) a b) m1)
+                   (consL sz ⊕ (Node2 (⊕ (sz c) (sz d) (sz e)) c d e) m2))]
+       [(Four c d e f)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node3 (⊕ (sz a) (sz b) (sz c)) a b c) m1)
+                   (consL sz ⊕ (Node3 (⊕ (sz d) (sz e) (sz f)) d e f) m2))])]
+    [(Three a b c)
+     (match dig2
+       [(One d)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node2 (⊕ (sz a) (sz b)) a b) m1)
+                   (consL sz ⊕ (Node2 (⊕ (sz c) (sz d)) c d) m2))]
+       [(Two d e)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node2 (⊕ (sz a) (sz b)) a b) m1)
+                   (consL sz ⊕ (Node3 (⊕ (sz c) (sz d) (sz e)) c d e) m2))]
+       [(Three d e f)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node3 (⊕ (sz a) (sz b) (sz c)) a b c) m1)
+                   (consL sz ⊕ (Node3 (⊕ (sz d) (sz e) (sz f)) d e f) m2))]
+       [(Four d e f g)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node2 (⊕ (sz c) (sz d)) c d)
+                          (consR sz ⊕ (Node2 (⊕ (sz a) (sz b)) a b) m1))
+                   (consL sz ⊕ (Node3 (⊕ (sz e) (sz f) (sz g)) e f g) m2))])]
+    [(Four a b c d)
+     (match dig2
+       [(One e)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node2 (⊕ (sz a) (sz b)) a b) m1)
+                   (consL sz ⊕ (Node2 (⊕ (sz c) (sz d) (sz e)) c d e) m2))]
+       [(Two e f)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node3 (⊕ (sz a) (sz b) (sz c)) a b c) m1)
+                   (consL sz ⊕ (Node3 (⊕ (sz d) (sz e) (sz f)) d e f) m2))]
+       [(Three e f g)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node2 (⊕ (sz c) (sz d)) c d)
+                          (consR sz ⊕ (Node2 (⊕ (sz a) (sz b)) a b) m1))
+                   (consL sz ⊕ (Node3 (⊕ (sz e) (sz f) (sz g)) e f g) m2))]
+       [(Four e f g h)
+        (FT-append sz ⊕ 
+                   (consR sz ⊕ (Node2 (⊕ (sz d) (sz e)) d e)
+                          (consR sz ⊕ (Node3 (⊕ (sz a) (sz b) (sz c)) a b c) m1))
+                   (consL sz ⊕ (Node3 (⊕ (sz f) (sz g) (sz h)) f g h) m2))])]))
   
 
 ;; splitting ----------------------------------------
