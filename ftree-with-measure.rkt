@@ -32,6 +32,12 @@
 (define empty-digit null) ; sometimes needed as intermediate internal structure
 (define digit-empty? null?)
 
+;; A Node is one of:
+;; - (Node2 v x y)
+;; - (Node3 v x y z)
+(struct Node2 (v x y))
+(struct Node3 (v x y z))
+
 ;; An [FTREEof X] is one of:
 ;; - Empty
 ;; - (Single x)
@@ -40,7 +46,6 @@
 (define empty-FT (Empty))
 (define (FT-empty? FT) (eq? empty-FT FT))
 (struct Single (x))
-(struct Node (v x y z))
 (struct Deep (v left mid right))
 #;(define (mk-deep left mid right)
   (Deep (+ (size left) (size mid) (size left)) left mid right))
@@ -56,14 +61,15 @@
   ;; sz : FTREE -> Measure
   (define (sz t)
     (match t
-      [(Empty)            ∅]
-      [(Single x)     (sz x)]
-      [(One a)        (sz a)]
+      [(Empty)         ∅]
+      [(Single x) (sz x)]
+      [(One a)    (sz a)]
       [(Two a b)      (⊕ (sz a) (sz b))]
       [(Three a b c)  (⊕ (sz a) (sz b) (sz c))]
       [(Four a b c d) (⊕ (sz a) (sz b) (sz c))]
-      [(Node v _ _ _)      v]
-      [(Deep v _ _ _)      v]
+      [(Node2 v _ _)   v]
+      [(Node3 v _ _ _) v]
+      [(Deep v _ _ _)  v]
       [x       (elem-sz x)])) ; measure individual element according to elem-sz
   (ftree ∅ sz ⊕ empty-FT))
 ;; ft-empty? : indicates if given ftree is empty
@@ -86,7 +92,7 @@
     [(Deep v (Four b c d e) mid right)
      (Deep (⊕ va v)
            (Two a b) 
-           (consL sz ⊕ (Node (⊕ (sz c) (sz d) (sz e)) c d e) mid)
+           (consL sz ⊕ (Node3 (⊕ (sz c) (sz d) (sz e)) c d e) mid)
            right)]))
 (define (ft-consL a ft)
   (match-define (ftree ∅ sz ⊕ FT) ft)
@@ -104,7 +110,7 @@
     [(Deep v left mid (Four e d c b))
      (Deep (⊕ v va) 
            left 
-           (consR sz ⊕ (Node (⊕ (sz e) (sz d) (sz c)) e d c) mid)
+           (consR sz ⊕ (Node3 (⊕ (sz e) (sz d) (sz c)) e d c) mid)
            (Two b a))]))
 (define (ft-consR a ft)
   (match-define (ftree ∅ sz ⊕ FT) ft)
@@ -143,7 +149,10 @@
         [(Three a b c)  (Deep (sz dig) (Two a b) empty-FT (One c))]
         [(Four a b c d) (Deep (sz dig) (Two a b) empty-FT (Two c d))])))
   
-(define (node->digit n) (match n [(Node _ x y z) (Three x y z)]))
+(define (node->digit n) 
+  (match n 
+    [(Node2 _ x y) (Two x y)]
+    [(Node3 _ x y z) (Three x y z)]))
 
 ;; constructs the appropriate Deep ftree, 
 ;; according to the first arg, which can be a Digit or null
@@ -291,9 +300,13 @@
          (match* (ft1 ft2)
            [((ftree _ _ _ (Single a)) _) (ft-consL a ft2)]
            [(_ (ftree _ _ _ (Single a))) (ft-consR a ft1)]
-           [((ftree _ _ ⊕ (Deep v1 l1 m1 r1))
-             (ftree _ _ _ (Deep v2 l2 m2 r2)))
-            (Deep (⊕ v1 v2) l1 (ft-append (consR r1 m1) (consL l2 m2)) r2)])]))
+           [((ftree _ _ ⊕ FT1) (ftree _ _ _ FT2))
+            (FT-append ⊕ FT1 FT2)])]))
+
+;(define (FT-append ⊕ FT1 FT2)
+;  (match* (FT1 FT2)
+;    [((Deep v1 l1 m1 r1) (Deep v2 l2 m2 r2))
+     
   
 
 ;; splitting ----------------------------------------
