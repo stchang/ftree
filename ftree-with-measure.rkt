@@ -66,7 +66,7 @@
       [(One a)    (sz a)]
       [(Two a b)      (⊕ (sz a) (sz b))]
       [(Three a b c)  (⊕ (sz a) (sz b) (sz c))]
-      [(Four a b c d) (⊕ (sz a) (sz b) (sz c))]
+      [(Four a b c d) (⊕ (sz a) (sz b) (sz c) (sz d))]
       [(Node2 v _ _)   v]
       [(Node3 v _ _ _) v]
       [(Deep v _ _ _)  v]
@@ -135,10 +135,11 @@
     [(Three a b c) (values a (Two b c))]
     [(Four a b c d) (values a (Three b c d))]))
 (define (digit-consL a digit) ;; digit can't be Four
+  (if (digit-empty? digit) (One a)
   (match digit
     [(One b) (Two a b)]
     [(Two b c) (Three a b c)]
-    [(Three b c d) (Four a b c d)]))
+    [(Three b c d) (Four a b c d)])))
 
 ;; converts digit to ftree
 (define (digit->FTREE sz dig)
@@ -387,7 +388,7 @@
       (match-let ([(ftree ∅ sz ⊕ FT) ft])
         (if (p? (sz FT))
             (let-values ([(l x r) (ft-split-tree p? ∅ sz ⊕ FT)])
-              (values l (ft-consL x r)))
+              (values (ftree ∅ sz ⊕ l) (ftree ∅ sz ⊕ (consL sz ⊕ x r))))
             (values ft (ftree ∅ sz ⊕ empty-FT))))))
   
 ;; splits non-empty FTREE
@@ -408,7 +409,7 @@
         (values (mk-deepR sz ⊕ left ml l) x (mk-deepL sz ⊕ r mr right))]
        [else ;; split is somewhere in right
         (define-values (l x r) (split-digit p? vlm sz ⊕ right))
-        (values (mk-deepR left mid l) x (digit->FTREE sz r))])]))
+        (values (mk-deepR sz ⊕ left mid l) x (digit->FTREE sz r))])]))
 
 (define (split-digit p? ∅ sz ⊕ digit)
   (match digit

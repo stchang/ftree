@@ -154,6 +154,19 @@
    (= (sumL thresh dqR/append)
       (for/sum ([n thresh]) n))))
 
+;; testing split ----------------------------------------
+;; i is index position
+(check-true
+ (for/and ([i size])
+   (let-values ([(ft1 ft2) (ft-split (λ (x) (> x i)) dqL2)])
+;     (printf "i = ~a, hd = ~a (- size i 1) = ~a\n" i (ft-hdL ft2) (- size i 1))))
+     (= (ft-hdL ft2) (- size i 1)))))
+
+(check-true
+ (for/and ([i size])
+   (let-values ([(ft1 ft2) (ft-split (λ (x) (> x i)) dqR2)])
+;     (printf "i = ~a, hd = ~a (- size i 1) = ~a\n" i (ft-hdL ft2) (- size i 1))))
+     (= (ft-hdL ft2) i))))
 
 ;(define (log2 x) (/ (log x) (log 2)))
 ;;; -------- depth analysis --------
