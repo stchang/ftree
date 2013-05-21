@@ -1,6 +1,6 @@
 #lang racket
 
-(provide empty-ft ft-empty? 
+(provide mk-ftree empty-ft ft-empty? 
          ft-consL ft-consR 
          ft-hd+tlL ft-hd+tlR ft-hdL ft-tlL ft-hdR ft-tlR
          ft-split)
@@ -37,7 +37,8 @@
 ;; - (Single x)
 ;; - (Deep Digit [FTREEof Node] Digit)
 (struct Empty ())
-(define empty-ft (Empty))
+(define empty-FT (Empty))
+(define (FT-empty? FT) (eq? empty-FT FT))
 (struct Single (x))
 (struct Node (v x y z))
 (struct Deep (v left mid right))
@@ -64,45 +65,50 @@
       [(Node v _ _ _)      v]
       [(Deep v _ _ _)      v]
       [x       (elem-sz x)])) ; measure individual element according to elem-sz
-  (ftree ∅ sz ⊕ empty-ft))
+  (ftree ∅ sz ⊕ empty-FT))
 ;; ft-empty? : indicates if given ftree is empty
-(define (ft-empty? ft) (eq? ft empty-ft) #;(Empty? (ftree-tree ft)))
+(define (ft-empty? ft) (eq? (ftree-FT ft) empty-FT))
+;; for when you dont care about measures, ie using ftree as a deque
+(define empty-ft (ftree 0 (λ _ 1) + empty-FT))
 
 
 ;; cons ----------------------------------------
 
-;; ft-cons: insert new element on the left of given ftree
-(define (ft-consL a ft)
-  (match-define (ftree _ sz ⊕ FT) ft)
+;; ft-consL: insert new element on the left of given ftree
+(define (consL sz ⊕ a FT)
   (define va (sz a))
   (match FT
     [(Empty) (Single a)]
-    [(Single b)                  (Deep (⊕ va (sz b)) (One a) empty-ft (One b))]
+    [(Single b)             (Deep (⊕ va (sz b)) (One a) empty-FT (One b))]
     [(Deep v (One b) mid right)       (Deep (⊕ va v) (Two a b) mid right)]
     [(Deep v (Two b c) mid right)     (Deep (⊕ va v) (Three a b c) mid right)]
     [(Deep v (Three b c d) mid right) (Deep (⊕ va v) (Four a b c d) mid right)]
     [(Deep v (Four b c d e) mid right)
      (Deep (⊕ va v)
            (Two a b) 
-           (ft-consL (Node (⊕ (sz c) (sz d) (sz e)) c d e) mid)
+           (consL sz ⊕ (Node (⊕ (sz c) (sz d) (sz e)) c d e) mid)
            right)]))
+(define (ft-consL a ft)
+  (match-define (ftree ∅ sz ⊕ FT) ft)
+  (ftree ∅ sz ⊕ (consL sz ⊕ a FT)))
 
 ;; ft-consR: insert new element on the right of given ftree
-(define (ft-consR ft a)
-  (match-define (ftree _ sz ⊕ FT) ft)
+(define (consR sz ⊕ a FT)
   (define va (sz a))
   (match FT
     [(Empty) (Single a)]
-    [(Single b) (Deep (⊕ (sz b) va) (One b) empty-ft (One a))]
+    [(Single b)           (Deep (⊕ (sz b) va) (One b) empty-FT (One a))]
     [(Deep v left mid (One b))       (Deep (⊕ v va) left mid (Two b a))]
     [(Deep v left mid (Two c b))     (Deep (⊕ v va) left mid (Three c b a))]
     [(Deep v left mid (Three d c b)) (Deep (⊕ v va) left mid (Four d c b a))]
     [(Deep v left mid (Four e d c b))
      (Deep (⊕ v va) 
            left 
-           (ft-consR (Node (⊕ (sz e) (sz d) (sz c)) e d c) mid)
+           (consR sz ⊕ (Node (⊕ (sz e) (sz d) (sz c)) e d c) mid)
            (Two b a))]))
-
+(define (ft-consR a ft)
+  (match-define (ftree ∅ sz ⊕ FT) ft)
+  (ftree ∅ sz ⊕ (consR sz ⊕ a FT)))
 ;; hd+tlL ----------------------------------------
 (define (digit-hdL d)
   (match d
@@ -129,13 +135,13 @@
     [(Three b c d) (Four a b c d)]))
 
 ;; converts digit to ftree
-(define (digit->ftree dig sz)
-  (if (digit-empty? dig) empty-ft
+(define (digit->FTREE sz dig)
+  (if (digit-empty? dig) empty-FT
       (match dig
         [(One a)        (Single a)]
-        [(Two a b)      (Deep (sz dig) (One a) empty-ft (One b))]
-        [(Three a b c)  (Deep (sz dig) (Two a b) empty-ft (One c))]
-        [(Four a b c d) (Deep (sz dig) (Two a b) empty-ft (Two c d))])))
+        [(Two a b)      (Deep (sz dig) (One a) empty-FT (One b))]
+        [(Three a b c)  (Deep (sz dig) (Two a b) empty-FT (One c))]
+        [(Four a b c d) (Deep (sz dig) (Two a b) empty-FT (Two c d))])))
   
 (define (node->digit n) (match n [(Node _ x y z) (Three x y z)]))
 
@@ -143,17 +149,18 @@
 ;; according to the first arg, which can be a Digit or null
 (define (mk-deepL sz ⊕ maybe-empty-digit mid right)
   (if (digit-empty? maybe-empty-digit)
-      (if (ft-empty? mid)
-          (digit->ftree right)
-          (let-values ([(hd tl) (hd+tlL mid sz ⊕)])
+      (if (FT-empty? mid)
+          (digit->FTREE sz right)
+          (let-values ([(hd tl) (hd+tlL sz ⊕ mid)])
             (Deep (⊕ (sz hd) (sz tl) (sz right)) (node->digit hd) tl right)))
-      (Deep maybe-empty-digit mid right)))
+      (Deep (⊕ (sz maybe-empty-digit) (sz mid) (sz right))
+            maybe-empty-digit mid right)))
 
 ;; hd+tlL : [FTREEof X] -> (values X [FTREEof X])
-(define (hd+tlL FT sz ⊕) ; FT is not empty
+(define (hd+tlL sz ⊕ FT) ; FT is not empty
   (match FT
     [(Empty) (error 'hd+tlL "empty tree")]
-    [(Single x) (values x empty-ft)]
+    [(Single x) (values x empty-FT)]
     [(Deep _ left mid right) 
      (define-values (hd tl) (digit-hd+tlL left))
      (values hd (mk-deepL sz ⊕ tl mid right))]))
@@ -178,9 +185,9 @@
 ;; ft-hd+tlL : [FTreeof X] -> (values x FTree)
 (define (ft-hd+tlL ft)
   (match-define (ftree ∅ sz ⊕ FT) ft)
-  (if (ft-empty? FT) 
-      empty-ft
-      (let-values ([(hd tl) (hd+tlL FT sz ⊕)])
+  (if (FT-empty? FT)
+      (error 'ft-hd+tlL "empty tree")
+      (let-values ([(hd tl) (hd+tlL sz ⊕ FT)])
         (values hd (ftree ∅ sz ⊕ tl)))))
 
 
@@ -223,17 +230,18 @@
 ;; according to the first arg, which can be a Digit or null
 (define (mk-deepR sz ⊕ left mid maybe-empty-digit)
   (if (digit-empty? maybe-empty-digit)
-      (if (ft-empty? mid)
-          (digit->ftree left)
-          (let-values ([(hd tl) (hd+tlR mid sz ⊕)])
+      (if (FT-empty? mid)
+          (digit->FTREE sz left)
+          (let-values ([(hd tl) (hd+tlR sz ⊕ mid)])
             (Deep (⊕ (sz left) (sz tl) (sz hd)) left tl (node->digit hd))))
-      (Deep left mid maybe-empty-digit)))
+      (Deep (⊕ (sz left) (sz mid) (sz maybe-empty-digit))
+            left mid maybe-empty-digit)))
 
 ;; hd+tlR : [FTREEof X] -> (values X [FTREEof X])
-(define (hd+tlR FT sz ⊕) ; FT is not empty
+(define (hd+tlR sz ⊕ FT) ; FT is not empty
   (match FT
     [(Empty) (error 'hd+tlR "empty tree")]
-    [(Single x) (values x empty-ft)]
+    [(Single x) (values x empty-FT)]
     [(Deep _ left mid right)
      (define-values (hd tl) (digit-hd+tlR right))
      (values hd (mk-deepR sz ⊕ left mid tl))]))
@@ -257,9 +265,9 @@
 ;; ft-hd+tlR : [FTreeof X] -> (values x FTree)
 (define (ft-hd+tlR ft)
   (match-define (ftree ∅ sz ⊕ FT) ft)
-  (if (ft-empty? FT) 
-      empty-ft
-      (let-values ([(hd tl) (hd+tlR FT)])
+  (if (FT-empty? FT) 
+      (error 'ft-hd+tlR "empty tree")
+      (let-values ([(hd tl) (hd+tlR sz ⊕ FT)])
         (values hd (ftree ∅ sz ⊕ tl)))))
 
 (define (ft-hdR ft)
@@ -282,10 +290,10 @@
 ;         (match-define (ftree ∅2 sz2 ⊕2 FT2) ft2)
          (match* (ft1 ft2)
            [((ftree _ _ _ (Single a)) _) (ft-consL a ft2)]
-           [(_ (ftree _ _ _ (Single a))) (ft-consR ft1 a)]
+           [(_ (ftree _ _ _ (Single a))) (ft-consR a ft1)]
            [((ftree _ _ ⊕ (Deep v1 l1 m1 r1))
              (ftree _ _ _ (Deep v2 l2 m2 r2)))
-            (Deep (⊕ v1 v2) l1 (ft-append (ft-consR m1 r1) (ft-consL l2 m2)) r2)])]))
+            (Deep (⊕ v1 v2) l1 (ft-append (consR r1 m1) (consL l2 m2)) r2)])]))
   
 
 ;; splitting ----------------------------------------
@@ -298,19 +306,19 @@
         (if (p? (sz FT))
             (let-values ([(l x r) (ft-split-tree p? ∅ sz ⊕ FT)])
               (values l (ft-consL x r)))
-            (values ft (ftree ∅ sz ⊕ empty-ft))))))
+            (values ft (ftree ∅ sz ⊕ empty-FT))))))
   
 ;; splits non-empty FTREE
 (define (ft-split-tree p? ∅ sz ⊕ FT)
   (match FT
-    [(Single x) (values empty-ft x empty-ft)]
+    [(Single x) (values empty-FT x empty-FT)]
     [(Deep _ left mid right)
      (define vl (⊕ ∅ (sz left)))
      (define vlm (⊕ vl (sz mid)))
      (cond 
        [(p? vl) ;; split is somewhere in left
         (define-values (l x r) (split-digit p? ∅ sz ⊕ left))
-        (values (digit->ftree l) x (mk-deepL sz ⊕ r mid right))]
+        (values (digit->FTREE sz l) x (mk-deepL sz ⊕ r mid right))]
        [(p? vlm) ;; split is somewhere in mid
         (define-values (ml mxs mr) (ft-split-tree p? vl sz ⊕ mid))
         (define-values (l x r) 
@@ -318,7 +326,7 @@
         (values (mk-deepR sz ⊕ left ml l) x (mk-deepL sz ⊕ r mr right))]
        [else ;; split is somewhere in right
         (define-values (l x r) (split-digit p? vlm sz ⊕ right))
-        (values (mk-deepR left mid l) x (digit->ftree r))])]))
+        (values (mk-deepR left mid l) x (digit->FTREE sz r))])]))
 
 (define (split-digit p? ∅ sz ⊕ digit)
   (match digit
