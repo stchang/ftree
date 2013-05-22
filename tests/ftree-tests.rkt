@@ -1,6 +1,6 @@
 #lang racket
 (require rackunit)
-(require "ftree-with-measure.rkt")
+(require "../ftree/ftree.rkt")
 
 ;; testing cons/hd/tl (ie using ftree as deque) -------------------------------
 

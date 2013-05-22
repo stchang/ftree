@@ -1,4 +1,4 @@
 ftree
 =====
 
-finger trees in Racket
+finger trees for Racket
