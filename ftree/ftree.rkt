@@ -1,9 +1,13 @@
 #lang racket
 
+;; public ftree provides
 (provide mk-ftree empty-ft ft-empty? ftree?
          ft-consL ft-consR 
          ft-hd+tlL ft-hd+tlR ft-hdL ft-tlL ft-hdR ft-tlR
          ft-append ft-split)
+
+;; internal FT provides
+(provide ftree consL consR FT-split-tree FT-empty? hd+tlL hd+tlR FT-append)
 
 ; 2-3 finger trees, from Hinze and Paterson 2006 JFP paper
 ;; implements functional, persistent sequences 
@@ -57,21 +61,23 @@
 ;; ⊕ is associative and combines "measures"
 (struct ftree (∅ sz ⊕ FT))
 ;; (elem-sz x) returns the "measure" for element x
-(define (mk-ftree ∅ elem-sz ⊕) 
+(define (mk-ftree ∅ elem-sz ⊕)
+  (define (⊕lst . args) ; args is non-empty
+    (foldl ⊕ (car args) (cdr args)))
   ;; sz : FTREE -> Measure
   (define (sz t)
     (match t
       [(Empty)         ∅]
       [(Single x) (sz x)]
       [(One a)    (sz a)]
-      [(Two a b)      (⊕ (sz a) (sz b))]
-      [(Three a b c)  (⊕ (sz a) (sz b) (sz c))]
-      [(Four a b c d) (⊕ (sz a) (sz b) (sz c) (sz d))]
+      [(Two a b)      (⊕lst (sz a) (sz b))]
+      [(Three a b c)  (⊕lst (sz a) (sz b) (sz c))]
+      [(Four a b c d) (⊕lst (sz a) (sz b) (sz c) (sz d))]
       [(Node2 v _ _)   v]
       [(Node3 v _ _ _) v]
       [(Deep v _ _ _)  v]
       [x       (elem-sz x)])) ; measure individual element according to elem-sz
-  (ftree ∅ sz ⊕ empty-FT))
+  (ftree ∅ sz ⊕lst empty-FT))
 ;; ft-empty? : indicates if given ftree is empty
 (define (ft-empty? ft) (eq? (ftree-FT ft) empty-FT))
 ;; for when you dont care about measures, ie using ftree as a deque
@@ -302,6 +308,8 @@
 
 (define (FT-append sz ⊕ FT1 FT2)
   (match* (FT1 FT2)
+    [((Empty) _ ) FT2]
+    [(_ (Empty)) FT1]
     [((Single x) _) (consL sz ⊕ x FT2)]
     [(_ (Single x)) (consR sz ⊕ x FT1)]
     [((Deep v1 l1 m1 r1) (Deep v2 l2 m2 r2))
@@ -387,12 +395,12 @@
       (values ft ft)
       (match-let ([(ftree ∅ sz ⊕ FT) ft])
         (if (p? (sz FT))
-            (let-values ([(l x r) (ft-split-tree p? ∅ sz ⊕ FT)])
+            (let-values ([(l x r) (FT-split-tree p? ∅ sz ⊕ FT)])
               (values (ftree ∅ sz ⊕ l) (ftree ∅ sz ⊕ (consL sz ⊕ x r))))
             (values ft (ftree ∅ sz ⊕ empty-FT))))))
   
 ;; splits non-empty FTREE
-(define (ft-split-tree p? ∅ sz ⊕ FT)
+(define (FT-split-tree p? ∅ sz ⊕ FT)
   (match FT
     [(Single x) (values empty-FT x empty-FT)]
     [(Deep _ left mid right)
@@ -403,7 +411,7 @@
         (define-values (l x r) (split-digit p? ∅ sz ⊕ left))
         (values (digit->FTREE sz l) x (mk-deepL sz ⊕ r mid right))]
        [(p? vlm) ;; split is somewhere in mid
-        (define-values (ml mxs mr) (ft-split-tree p? vl sz ⊕ mid))
+        (define-values (ml mxs mr) (FT-split-tree p? vl sz ⊕ mid))
         (define-values (l x r) 
           (split-digit p? (⊕ vl (sz ml)) sz ⊕ (node->digit mxs)))
         (values (mk-deepR sz ⊕ left ml l) x (mk-deepL sz ⊕ r mr right))]

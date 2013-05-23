@@ -1,0 +1,6 @@
+******** 2013-05-23 ********
+- reorganize code for less duplication
+  - preliminary plan:
+    - FTREE fns
+    - ftree fns that handles all sub-data strucures
+    - separate modules for each sub-data structure
