@@ -1,10 +1,13 @@
 #lang racket
 
+(require racket/generic)
+
 ;; public ftree provides
 (provide mk-ftree empty-ft ft-empty? ftree?
          ft-consL ft-consR 
          ft-hd+tlL ft-hd+tlR ft-hdL ft-tlL ft-hdR ft-tlR
-         ft-append ft-split)
+         ft-append ft-split
+         gen:ft)
 
 ;; internal FT provides
 (provide ftree consL consR FT-split-tree FT-empty? hd+tlL hd+tlR FT-append)
@@ -54,12 +57,17 @@
 #;(define (mk-deep left mid right)
   (Deep (+ (size left) (size mid) (size left)) left mid right))
 
+(define-generics ft
+  [gen:mk ft ∅ sz ⊕ FT])
 
 ;; An [FTreeof X] is an (ftree init sz op [FTREEof X])
 ;; ∅ is the "measure" for an empty-ft
 ;; (sz t) returns the "measure" for FTREE t
 ;; ⊕ is associative and combines "measures"
-(struct ftree (∅ sz ⊕ FT))
+(struct ftree (∅ sz ⊕ FT)
+  #:methods gen:ft
+  [(define (gen:mk ft ∅ sz ⊕ FT) (ftree ∅ sz ⊕ FT))])
+
 ;; (elem-sz x) returns the "measure" for element x
 (define (mk-ftree ∅ elem-sz ⊕)
   (define (⊕lst . args) ; args is non-empty
@@ -102,7 +110,10 @@
            right)]))
 (define (ft-consL a ft)
   (match-define (ftree ∅ sz ⊕ FT) ft)
-  (ftree ∅ sz ⊕ (consL sz ⊕ a FT)))
+  (gen:mk ft ∅ sz ⊕ (consL sz ⊕ a FT)))
+
+;(define (ft-consL a ft)
+  
 
 ;; ft-consR: insert new element on the right of given ftree
 (define (consR sz ⊕ a FT)
@@ -120,7 +131,7 @@
            (Two b a))]))
 (define (ft-consR a ft)
   (match-define (ftree ∅ sz ⊕ FT) ft)
-  (ftree ∅ sz ⊕ (consR sz ⊕ a FT)))
+  (gen:mk ft ∅ sz ⊕ (consR sz ⊕ a FT)))
 ;; hd+tlL ----------------------------------------
 (define (digit-hdL d)
   (match d
@@ -204,7 +215,7 @@
   (if (FT-empty? FT)
       (error 'ft-hd+tlL "empty tree")
       (let-values ([(hd tl) (hd+tlL sz ⊕ FT)])
-        (values hd (ftree ∅ sz ⊕ tl)))))
+        (values hd (gen:mk ft ∅ sz ⊕ tl)))))
 
 
 (define (ft-hdL ft)
@@ -284,7 +295,7 @@
   (if (FT-empty? FT) 
       (error 'ft-hd+tlR "empty tree")
       (let-values ([(hd tl) (hd+tlR sz ⊕ FT)])
-        (values hd (ftree ∅ sz ⊕ tl)))))
+        (values hd (gen:mk ft ∅ sz ⊕ tl)))))
 
 (define (ft-hdR ft)
   (when (ft-empty? ft) (error 'ft-hdR "empty tree"))
@@ -304,7 +315,7 @@
         [else 
          (match* (ft1 ft2)
            [((ftree ∅ sz ⊕ FT1) (ftree _ _ _ FT2))
-            (ftree ∅ sz ⊕ (FT-append sz ⊕ FT1 FT2))])]))
+            (gen:mk ft1 ∅ sz ⊕ (FT-append sz ⊕ FT1 FT2))])]))
 
 (define (FT-append sz ⊕ FT1 FT2)
   (match* (FT1 FT2)
@@ -396,8 +407,8 @@
       (match-let ([(ftree ∅ sz ⊕ FT) ft])
         (if (p? (sz FT))
             (let-values ([(l x r) (FT-split-tree p? ∅ sz ⊕ FT)])
-              (values (ftree ∅ sz ⊕ l) (ftree ∅ sz ⊕ (consL sz ⊕ x r))))
-            (values ft (ftree ∅ sz ⊕ empty-FT))))))
+              (values (gen:mk ft ∅ sz ⊕ l) (gen:mk ft ∅ sz ⊕ (consL sz ⊕ x r))))
+            (values ft (gen:mk ft ∅ sz ⊕ empty-FT))))))
   
 ;; splits non-empty FTREE
 (define (FT-split-tree p? ∅ sz ⊕ FT)

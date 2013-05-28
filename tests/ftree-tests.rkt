@@ -2,6 +2,10 @@
 (require rackunit)
 (require "../ftree/ftree.rkt")
 
+
+;; test generics
+(check-true (ftree? (ft-consL 1 empty-ft)))
+
 ;; testing cons/hd/tl (ie using ftree as deque) -------------------------------
 
 ;; build-dequeL size: result is deque with elems size-1 ... 1

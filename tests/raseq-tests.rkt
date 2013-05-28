@@ -1,6 +1,11 @@
 #lang racket
 (require rackunit)
+(require "../ftree/ftree.rkt")
 (require "../raseq/raseq.rkt")
+
+
+;; test generics
+(check-true (raseq? (ft-consL 1 empty-ras)))
 
 ;; testing cons/hd/tl (ie using ftree as deque) -------------------------------
 
@@ -10,26 +15,26 @@
     (if (zero? n)
         empty-ras
         (let ([nsub1 (sub1 n)])
-          (ra-consL (f nsub1) (loop nsub1))))))
+          (ft-consL (f nsub1) (loop nsub1))))))
 ;; build-dequeR size: result is deque with elems 1 ... size-1
 (define (build-raseqR size f)
   (let loop ([n size])
     (if (zero? n)
         empty-ras
         (let ([nsub1 (sub1 n)])
-          (ra-consR (f nsub1) (loop nsub1))))))
+          (ft-consR (f nsub1) (loop nsub1))))))
 
 
 ;; sums the m front, ie left, deque elements
 (define (sumL m dq)
   (let loop ([n 0] [dq dq])
     (if (= n m) 0
-        (+ (ra-hdL dq) (loop (add1 n) (ra-tlL dq))))))
+        (+ (ft-hdL dq) (loop (add1 n) (ft-tlL dq))))))
 ;; sums the m rear, ie right, deque elements
 (define (sumR m dq)
   (let loop ([n 0] [dq dq])
     (if (= n m) 0
-        (+ (ra-hdR dq) (loop (add1 n) (ra-tlR dq))))))
+        (+ (ft-hdR dq) (loop (add1 n) (ft-tlR dq))))))
 
 (define size 1030)
 (define dqL (build-raseqL size (λ (x) x)))
@@ -52,26 +57,26 @@
     (if (zero? n)
         (mk-raseq)
         (let ([nsub1 (sub1 n)])
-          (ra-consL (f nsub1) (loop nsub1))))))
+          (ft-consL (f nsub1) (loop nsub1))))))
 (define (build-raseqR2 size f)
   (let loop ([n size])
     (if (zero? n)
         (mk-raseq)
         (let ([nsub1 (sub1 n)])
-          (ra-consR (f nsub1) (loop nsub1))))))
+          (ft-consR (f nsub1) (loop nsub1))))))
 
 
 ;; sums the m front, ie left, deque elements
 (define (sumL2 m dq)
   (let loop ([n 0] [dq dq])
     (if (= n m) 0
-        (let-values ([(hd tl) (ra-hd+tlL dq)])
+        (let-values ([(hd tl) (ft-hd+tlL dq)])
           (+ hd (loop (add1 n) tl))))))
 ;; sums the m rear, ie right, deque elements
 (define (sumR2 m dq)
   (let loop ([n 0] [dq dq])
     (if (= n m) 0
-        (let-values ([(hd tl) (ra-hd+tlR dq)])
+        (let-values ([(hd tl) (ft-hd+tlR dq)])
           (+ hd (loop (add1 n) tl))))))
 
 (define dqL2 (build-raseqL2 size (λ (x) x)))
@@ -100,7 +105,7 @@
  (for/and ([thresh size/2])
    (= (sumR2 thresh dqL/2b)
       (for/sum ([n thresh]) (+ n size/2)))))
-(define dqLapp (ra-append dqL/2b dqL/2a))
+(define dqLapp (ft-append dqL/2b dqL/2a))
 (check-true
  (for/and ([thresh size])
    (= (sumR thresh dqLapp)
@@ -116,7 +121,7 @@
  (for/and ([thresh size/2])
    (= (sumL2 thresh dqR/2b)
       (for/sum ([n thresh]) (+ n size/2)))))
-(define dqRapp (ra-append dqR/2a dqR/2b))
+(define dqRapp (ft-append dqR/2a dqR/2b))
 (check-true
  (for/and ([thresh size])
    (= (sumL thresh dqRapp)
@@ -125,15 +130,15 @@
 ;; multi-append --------------------
 (define (build-raseq/appendL n f) ; n = size, must be power of 2
   (if (<= n 2)
-      (ra-consL (f (sub1 n)) (ra-consL (f (- n 2)) empty-ras))
+      (ft-consL (f (sub1 n)) (ft-consL (f (- n 2)) empty-ras))
       (let ([n/2 (/ n 2)])
-        (ra-append 
+        (ft-append 
          (build-raseq/appendL n/2 (λ (x) (+ n/2 (f x))))
          (build-raseq/appendL n/2 (λ (x) (f x)))))))
 (define sizepow2 512)
 (define dqL/append1 (build-raseq/appendL sizepow2 (λ (x) x)))
 (define dqL/append2 (build-raseq/appendL sizepow2 (λ (x) (+ x sizepow2))))
-(define dqL/append (ra-append dqL/append2 dqL/append1))
+(define dqL/append (ft-append dqL/append2 dqL/append1))
 (check-true
  (for/and ([thresh (* 2 sizepow2)])
    (= (sumR thresh dqL/append)
@@ -141,14 +146,14 @@
 
 (define (build-raseq/appendR n f) ; n = size, must be power of 2
   (if (<= n 2)
-      (ra-consR (f (sub1 n)) (ra-consR (f (- n 2)) empty-ras))
+      (ft-consR (f (sub1 n)) (ft-consR (f (- n 2)) empty-ras))
       (let ([n/2 (/ n 2)])
-        (ra-append 
+        (ft-append 
          (build-raseq/appendR n/2 (λ (x) (f x)))
          (build-raseq/appendR n/2 (λ (x) (+ n/2 (f x))))))))
 (define dqR/append1 (build-raseq/appendR sizepow2 (λ (x) x)))
 (define dqR/append2 (build-raseq/appendR sizepow2 (λ (x) (+ x sizepow2))))
-(define dqR/append (ra-append dqR/append1 dqR/append2))
+(define dqR/append (ft-append dqR/append1 dqR/append2))
 (check-true
  (for/and ([thresh (* 2 sizepow2)])
    (= (sumL thresh dqR/append)
@@ -160,13 +165,13 @@
  (for/and ([i size])
    (let-values ([(ft1 ft2) (ra-splitat i dqL2)])
 ;     (printf "i = ~a, hd = ~a (- size i 1) = ~a\n" i (ft-hdL ft2) (- size i 1))))
-     (= (ra-hdL ft2) (- size i 1)))))
+     (= (ft-hdL ft2) (- size i 1)))))
 
 (check-true
  (for/and ([i size])
    (let-values ([(ft1 ft2) (ra-splitat i dqR2)])
 ;     (printf "i = ~a, hd = ~a (- size i 1) = ~a\n" i (ft-hdL ft2) (- size i 1))))
-     (= (ra-hdL ft2) i))))
+     (= (ft-hdL ft2) i))))
 
 (check-true
  (for/and ([i size])

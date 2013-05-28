@@ -1,6 +1,10 @@
 #lang racket
 (require rackunit)
+(require "../ftree/ftree.rkt")
 (require "../pqueue/pqueue.rkt")
+
+;; test generics
+(check-true (pqueue? (ft-consL 1 (mk-pqueue <=))))
 
 ;; testing cons/hd/tl (ie using ftree as deque) -------------------------------
 
@@ -8,28 +12,28 @@
 (define (build-pqueueL size f)
   (let loop ([n size])
     (if (zero? n)
-        (mk-pqueue +inf.0 <=)
+        (mk-pqueue <=)
         (let ([nsub1 (sub1 n)])
-          (pq-consL (f nsub1) (loop nsub1))))))
+          (ft-consL (f nsub1) (loop nsub1))))))
 ;; build-dequeR size: result is deque with elems 1 ... size-1
 (define (build-pqueueR size f)
   (let loop ([n size])
     (if (zero? n)
-        (mk-pqueue +inf.0 <=)
+        (mk-pqueue <=)
         (let ([nsub1 (sub1 n)])
-          (pq-consR (f nsub1) (loop nsub1))))))
+          (ft-consR (f nsub1) (loop nsub1))))))
 
 
 ;; sums the m front, ie left, deque elements
 (define (sumL m dq)
   (let loop ([n 0] [dq dq])
     (if (= n m) 0
-        (+ (pq-hdL dq) (loop (add1 n) (pq-tlL dq))))))
+        (+ (ft-hdL dq) (loop (add1 n) (ft-tlL dq))))))
 ;; sums the m rear, ie right, deque elements
 (define (sumR m dq)
   (let loop ([n 0] [dq dq])
     (if (= n m) 0
-        (+ (pq-hdR dq) (loop (add1 n) (pq-tlR dq))))))
+        (+ (ft-hdR dq) (loop (add1 n) (ft-tlR dq))))))
 
 (define size 1030)
 (define dqL (build-pqueueL size (λ (x) x)))
@@ -50,28 +54,28 @@
 (define (build-pqueueL2 size f)
   (let loop ([n size])
     (if (zero? n)
-        (mk-pqueue -inf.0 >=)
+        (mk-pqueue >=)
         (let ([nsub1 (sub1 n)])
-          (pq-consL (f nsub1) (loop nsub1))))))
+          (ft-consL (f nsub1) (loop nsub1))))))
 (define (build-pqueueR2 size f)
   (let loop ([n size])
     (if (zero? n)
-        (mk-pqueue +inf.0 <=)
+        (mk-pqueue >=)
         (let ([nsub1 (sub1 n)])
-          (pq-consR (f nsub1) (loop nsub1))))))
+          (ft-consR (f nsub1) (loop nsub1))))))
 
 
 ;; sums the m front, ie left, deque elements
 (define (sumL2 m dq)
   (let loop ([n 0] [dq dq])
     (if (= n m) 0
-        (let-values ([(hd tl) (pq-hd+tlL dq)])
+        (let-values ([(hd tl) (ft-hd+tlL dq)])
           (+ hd (loop (add1 n) tl))))))
 ;; sums the m rear, ie right, deque elements
 (define (sumR2 m dq)
   (let loop ([n 0] [dq dq])
     (if (= n m) 0
-        (let-values ([(hd tl) (pq-hd+tlR dq)])
+        (let-values ([(hd tl) (ft-hd+tlR dq)])
           (+ hd (loop (add1 n) tl))))))
 
 (define dqL2 (build-pqueueL2 size (λ (x) x)))
@@ -100,7 +104,7 @@
  (for/and ([thresh size/2])
    (= (sumR2 thresh dqL/2b)
       (for/sum ([n thresh]) (+ n size/2)))))
-(define dqLapp (pq-append dqL/2b dqL/2a))
+(define dqLapp (ft-append dqL/2b dqL/2a))
 (check-true
  (for/and ([thresh size])
    (= (sumR thresh dqLapp)
@@ -116,7 +120,7 @@
  (for/and ([thresh size/2])
    (= (sumL2 thresh dqR/2b)
       (for/sum ([n thresh]) (+ n size/2)))))
-(define dqRapp (pq-append dqR/2a dqR/2b))
+(define dqRapp (ft-append dqR/2a dqR/2b))
 (check-true
  (for/and ([thresh size])
    (= (sumL thresh dqRapp)
@@ -125,15 +129,15 @@
 ;; multi-append --------------------
 (define (build-pqueue/appendL n f) ; n = size, must be power of 2
   (if (<= n 2)
-      (pq-consL (f (sub1 n)) (pq-consL (f (- n 2)) (mk-pqueue +inf.0 <=)))
+      (ft-consL (f (sub1 n)) (ft-consL (f (- n 2)) (mk-pqueue <=)))
       (let ([n/2 (/ n 2)])
-        (pq-append 
+        (ft-append 
          (build-pqueue/appendL n/2 (λ (x) (+ n/2 (f x))))
          (build-pqueue/appendL n/2 (λ (x) (f x)))))))
 (define sizepow2 512)
 (define dqL/append1 (build-pqueue/appendL sizepow2 (λ (x) x)))
 (define dqL/append2 (build-pqueue/appendL sizepow2 (λ (x) (+ x sizepow2))))
-(define dqL/append (pq-append dqL/append2 dqL/append1))
+(define dqL/append (ft-append dqL/append2 dqL/append1))
 (check-true
  (for/and ([thresh (* 2 sizepow2)])
    (= (sumR thresh dqL/append)
@@ -141,14 +145,14 @@
 
 (define (build-pqueue/appendR n f) ; n = size, must be power of 2
   (if (<= n 2)
-      (pq-consR (f (sub1 n)) (pq-consR (f (- n 2)) (mk-pqueue +inf.0 <=)))
+      (ft-consR (f (sub1 n)) (ft-consR (f (- n 2)) (mk-pqueue <=)))
       (let ([n/2 (/ n 2)])
-        (pq-append 
+        (ft-append 
          (build-pqueue/appendR n/2 (λ (x) (f x)))
          (build-pqueue/appendR n/2 (λ (x) (+ n/2 (f x))))))))
 (define dqR/append1 (build-pqueue/appendR sizepow2 (λ (x) x)))
 (define dqR/append2 (build-pqueue/appendR sizepow2 (λ (x) (+ x sizepow2))))
-(define dqR/append (pq-append dqR/append1 dqR/append2))
+(define dqR/append (ft-append dqR/append1 dqR/append2))
 (check-true
  (for/and ([thresh (* 2 sizepow2)])
    (= (sumL thresh dqR/append)
@@ -160,7 +164,7 @@
   (let-values ([(x pqrst) (pq-top+rest pq)])
 ;     (printf "i = ~a, hd = ~a (- size i 1) = ~a\n" i (ft-hdL ft2) (- size i 1))))
     (unless (= i (sub1 size))
-      (check-true (= x i))
+      (check-true (= x (- size i 1)))
       (loop (add1 i) pqrst))))
 
 (let loop ([i 0] [pq dqR2])
@@ -168,6 +172,20 @@
 ;     (printf "i = ~a, hd = ~a (- size i 1) = ~a\n" i (ft-hdL ft2) (- size i 1))))
     (unless (= i (sub1 size))
       (check-true (= x (- size i 1)))
+      (loop (add1 i) pqrst))))
+
+(let loop ([i 0] [pq dqL])
+  (let-values ([(x pqrst) (pq-top+rest pq)])
+;     (printf "i = ~a, hd = ~a (- size i 1) = ~a\n" i (ft-hdL ft2) (- size i 1))))
+    (unless (= i (sub1 size))
+      (check-true (= x i))
+      (loop (add1 i) pqrst))))
+
+(let loop ([i 0] [pq dqR])
+  (let-values ([(x pqrst) (pq-top+rest pq)])
+;     (printf "i = ~a, hd = ~a (- size i 1) = ~a\n" i (ft-hdL ft2) (- size i 1))))
+    (unless (= i (sub1 size))
+      (check-true (= x i))
       (loop (add1 i) pqrst))))
 
 ;(check-true
