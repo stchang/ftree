@@ -160,33 +160,37 @@
 
 ;; testing split ----------------------------------------
 ;; i is index position
-(let loop ([i 0] [pq dqL2])
+(let loop ([i 0] [pq dqL2] [pq2 dqL2]) ; pq uses top+rest, while pq2 uses them separately
   (let-values ([(x pqrst) (pq-top+rest pq)])
 ;     (printf "i = ~a, hd = ~a (- size i 1) = ~a\n" i (ft-hdL ft2) (- size i 1))))
     (unless (= i (sub1 size))
+      (check-true (= x (pq-top pq) (pq-top pq2)))
       (check-true (= x (- size i 1)))
-      (loop (add1 i) pqrst))))
+      (loop (add1 i) pqrst (pq-rest pq2)))))
 
-(let loop ([i 0] [pq dqR2])
+(let loop ([i 0] [pq dqR2] [pq2 dqR2])
   (let-values ([(x pqrst) (pq-top+rest pq)])
 ;     (printf "i = ~a, hd = ~a (- size i 1) = ~a\n" i (ft-hdL ft2) (- size i 1))))
     (unless (= i (sub1 size))
+      (check-true (= x (pq-top pq) (pq-top pq2)))
       (check-true (= x (- size i 1)))
-      (loop (add1 i) pqrst))))
+      (loop (add1 i) pqrst (pq-rest pq2)))))
 
-(let loop ([i 0] [pq dqL])
+(let loop ([i 0] [pq dqL]  [pq2 dqL])
   (let-values ([(x pqrst) (pq-top+rest pq)])
 ;     (printf "i = ~a, hd = ~a (- size i 1) = ~a\n" i (ft-hdL ft2) (- size i 1))))
     (unless (= i (sub1 size))
+      (check-true (= x (pq-top pq) (pq-top pq2)))
       (check-true (= x i))
-      (loop (add1 i) pqrst))))
+      (loop (add1 i) pqrst (pq-rest pq2)))))
 
-(let loop ([i 0] [pq dqR])
+(let loop ([i 0] [pq dqR]  [pq2 dqR])
   (let-values ([(x pqrst) (pq-top+rest pq)])
 ;     (printf "i = ~a, hd = ~a (- size i 1) = ~a\n" i (ft-hdL ft2) (- size i 1))))
     (unless (= i (sub1 size))
+      (check-true (= x (pq-top pq) (pq-top pq2)))
       (check-true (= x i))
-      (loop (add1 i) pqrst))))
+      (loop (add1 i) pqrst (pq-rest pq2)))))
 
 ;(check-true
 ; (for/and ([i size])
