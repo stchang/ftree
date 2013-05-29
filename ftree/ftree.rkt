@@ -71,7 +71,10 @@
 ;; (elem-sz x) returns the "measure" for element x
 (define (mk-ftree ∅ elem-sz ⊕)
   (define (⊕lst . args) ; args is non-empty
-    (foldl ⊕ (car args) (cdr args)))
+    (if (null? (cdr args))
+        (car args)
+        (match-let ([(list-rest x y rst) args])
+          (apply ⊕lst (⊕ x y) rst))))
   ;; sz : FTREE -> Measure
   (define (sz t)
     (match t
