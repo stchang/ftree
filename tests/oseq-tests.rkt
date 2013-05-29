@@ -1,0 +1,170 @@
+#lang racket
+(require rackunit)
+(require "../ftree/ftree.rkt")
+(require "../orderedseq/orderedseq.rkt")
+
+;; test generics
+(check-true (oseq? (ft-consL 1 (mk-oseq <))))
+
+;; builds min-queue by inserting elements lowest first, start ... size-1
+(define (build-oseq< size f [start 0])
+  (let loop ([n size])
+    (if (= start n)
+        (mk-oseq <)
+        (let ([nsub1 (sub1 n)])
+          (os-insert (f nsub1) (loop nsub1))))))
+
+;; builds max-queue by inserting elements lowest first
+(define (build-oseq> size f)
+  (let loop ([n size])
+    (if (zero? n)
+        (mk-oseq >)
+        (let ([nsub1 (sub1 n)])
+          (os-insert (f nsub1) (loop nsub1))))))
+
+;; builds min-queue by inserting elements greatest first
+(define (build-oseq2< size f)
+  (let loop ([n size] [os (mk-oseq <)])
+    (if (zero? n)
+        os
+        (let ([nsub1 (sub1 n)])
+          (loop nsub1 (os-insert (f nsub1) os))))))
+;; builds min-queue by inserting elements greatest first
+(define (build-oseq2> size f)
+  (let loop ([n size] [os (mk-oseq >)])
+    (if (zero? n)
+        os
+        (let ([nsub1 (sub1 n)])
+          (loop nsub1 (os-insert (f nsub1) os))))))
+
+
+
+;; sums the m front, ie left, deque elements
+(define (sumL m dq)
+  (let loop ([n 0] [dq dq])
+    (if (= n m) 0
+        (+ (ft-hdL dq) (loop (add1 n) (ft-tlL dq))))))
+;; sums the m rear, ie right, deque elements
+(define (sumR m dq)
+  (let loop ([n 0] [dq dq])
+    (if (= n m) 0
+        (+ (ft-hdR dq) (loop (add1 n) (ft-tlR dq))))))
+
+;; test insert ----------------------------------------
+(define size 1030)
+(define dq< (build-oseq< size (λ (x) x)))
+(define dq2< (build-oseq2< size (λ (x) x)))
+(define dq> (build-oseq> size (λ (x) x)))
+(define dq2> (build-oseq2> size (λ (x) x)))
+(check-true
+ (for/and ([thresh size])
+   (= (sumL thresh dq<)
+      (sumL thresh dq2<)
+      (for/sum ([n thresh]) n))))
+(check-true
+ (for/and ([thresh size])
+   (= (sumR thresh dq>)
+      (sumR thresh dq2>)
+      (for/sum ([n thresh]) n))))
+
+(define os1< (build-oseq< 100 values 0))
+(define os2< (build-oseq< 200 values 100))
+(define os3< (build-oseq< 300 values 200))
+(define os4< (build-oseq< 400 values 300))
+(define os<merged (os-merge (os-merge os1< os2<) (os-merge os3< os4<)))
+(define os<merged2 (os-merge (os-merge (os-merge os1< os3<) os2<) os4<))
+(define os<merged3 (os-merge (os-merge os2< (os-merge os1< os3<)) os4<))
+(define os<merged4 (os-merge (os-merge os1< os3<) (os-merge os2< os4<)))
+(define os<merged5 (os-merge (os-merge os2< os4<) (os-merge os1< os3<)))
+(define merged-size 400)
+(check-true
+ (for/and ([thresh merged-size])
+   (= (sumL thresh os<merged)
+      (sumL thresh os<merged2)
+      (sumL thresh os<merged3)
+      (sumL thresh os<merged4)
+      (sumL thresh os<merged5)
+      (for/sum ([n thresh]) n))))
+
+;; test partition ----------------------------------------
+(define (test-partition<? os [size size])
+  (for/and ([i size])
+    (let-values ([(l r) (os-partition i os)])
+      (and (= (ft-hdL r) i)
+           (or (ft-empty? l)
+               (= (ft-hdR l) (sub1 i)))))))
+(define (test-partition>? os [size size])
+  (for/and ([i size])
+    (let-values ([(l r) (os-partition i os)])
+      (and (= (ft-hdL r) i)
+           (or (ft-empty? l)
+               (= (ft-hdR l) (add1 i)))))))
+(check-true (test-partition<? dq<))
+(check-true (test-partition<? dq2<))
+(check-true (test-partition>? dq>))
+(check-true (test-partition>? dq2>))
+(check-true (test-partition<? os<merged merged-size))
+(check-true (test-partition<? os<merged2 merged-size))
+(check-true (test-partition<? os<merged3 merged-size))
+(check-true (test-partition<? os<merged4 merged-size))
+(check-true (test-partition<? os<merged5 merged-size))
+
+;; test delete ----------------------------------------
+(define (test-delete<? os [size size])
+  (for/and ([i size])
+    (let-values ([(l r) (os-partition i (os-delete-all i os))])
+      (and (or (ft-empty? r)
+               (= (ft-hdL r) (add1 i)))
+           (or (ft-empty? l)
+               (= (ft-hdR l) (sub1 i)))))))
+(define (test-delete>? os)
+  (for/and ([i size])
+    (let-values ([(l r) (os-partition i (os-delete-all i os))])
+      (and (or (ft-empty? r)
+               (= (ft-hdL r) (sub1 i)))
+           (or (ft-empty? l)
+               (= (ft-hdR l) (add1 i)))))))
+(check-true (test-delete<? dq<))
+(check-true (test-delete<? dq2<))
+(check-true (test-delete>? dq>))
+(check-true (test-delete>? dq2>))
+(check-true (test-delete<? os<merged merged-size))
+(check-true (test-delete<? os<merged2 merged-size))
+(check-true (test-delete<? os<merged3 merged-size))
+(check-true (test-delete<? os<merged4 merged-size))
+(check-true (test-delete<? os<merged5 merged-size))
+
+;; test top and bot ----------------------------------------
+(define (test-top-bot< os [size size])
+  (let loop ([i 0] [os os])
+    (check-true (= (os-top os) i))
+    (let ([rst (os-remove-top os)])
+      (unless (os-empty? rst)
+        (loop (add1 i) rst))))
+  (let loop ([i 0] [os os])
+    (check-true (= (os-bot os) (- size i 1)))
+    (let ([rst (os-remove-bot os)])
+      (unless (os-empty? rst)
+        (loop (add1 i) rst)))))
+(test-top-bot< dq<)
+(test-top-bot< dq2<)
+(test-top-bot< os<merged merged-size)
+(test-top-bot< os<merged2 merged-size)
+(test-top-bot< os<merged3 merged-size)
+(test-top-bot< os<merged4 merged-size)
+(test-top-bot< os<merged5 merged-size)
+
+(define (test-top-bot> os)
+  (let loop ([i 0] [os os])
+    (check-true (= (os-top os) (- size i 1)))
+    (let ([rst (os-remove-top os)])
+      (unless (os-empty? rst)
+        (loop (add1 i) rst))))
+  (let loop ([i 0] [os os])
+    (check-true (= (os-bot os) i))
+    (let ([rst (os-remove-bot os)])
+      (unless (os-empty? rst)
+        (loop (add1 i) rst)))))
+(test-top-bot> dq>)
+(test-top-bot> dq2>)
+
