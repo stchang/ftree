@@ -140,6 +140,33 @@ Differences with pqueues:
 
 @section{Interval Trees}
 
+@defmodule[intervaltree]
+
+Represents sets of intervals where an interval is a pair of real numbers, lo and hi, with lo <= hi. Intervals are sorted in ascending order of the lo's, when added via @racket[it-insert] (but not with any of the @racket[ft-cons] functions). The cached measure is an interval where the lo is the lo of the rightmost element and the hi is the maximum of the element hi's.
+
+@defproc[(itree? [x any/c]) boolean?]{Identifies an interval tree.}
+@defproc[(mk-itree) itree?]{Makes an empty interval tree.}
+@defproc[(it-empty? [it itree?]) boolean?]{Identifies an empty interval tree.}
+
+@defproc[(it-insert [lo number?] [hi number?] [it itree?]) itree?]{
+  Inserts the specified interval in the given interval tree, maintaining ordering.}
+
+@defproc[(it-search [it itree?] [lo number?] [hi number?]) (or/c interval? #f)]{
+  Of the intervals in the given interval tree that intersect the given interval, returns the one with the lowest lo.}
+
+@defproc[(it-match [it itree?] [lo number?] [hi number?]) (listof interval?)]{
+  Returns all intervals in the given interval tree that intersect the given interval.}
+
+@defproc[(interval? [x any/c]) boolean?]{Identifies an interval struct.}
+@defproc[(interval [lo number?] [hi number?]) interval?]{Constructs an interval struct.}
+@defproc[(interval-low [i interval?]) number?]{Returns the interval lo.}
+@defproc[(interval-high [i interval?]) number?]{Returns the interval hi.}
+@defproc[(interval-intersect? [i interval?] [j interval?]) boolean?]{
+  Indicates if interval @racket[i] and @racket[j] intersect, where intersection means 
+                        @racket[(<= (interval-low i) (interval-high j))] and @racket[(<= (interval-low j) (interval-high i))]
+                        is true.}
+
+
 @(bibliography
   
   (bib-entry #:key "HP06"

@@ -8,7 +8,7 @@
 (provide mk-itree itree? it-empty? 
          it-insert it-match it-search
          interval-low interval-high interval
-         interval-intersect?)
+         interval-intersect? interval?)
 
 (struct interval (low high))
 
