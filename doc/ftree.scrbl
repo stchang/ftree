@@ -1,12 +1,21 @@
 #lang scribble/manual
 @(require scribble/eval
-          (for-label "ftree.rkt")
+          (for-label "../ftree/ftree.rkt"
+                     "../raseq/raseq.rkt"
+                     "../pqueue/pqueue.rkt"
+                     "../orderedseq/orderedseq.rkt"
+                     "../intervaltree/intervaltree.rkt")
           racket/base)
 
 @title{Finger Trees}
 
 @(define the-eval (make-base-eval))
-@(the-eval '(require "ftree.rkt"))
+@(the-eval '(require "../ftree/ftree.rkt"
+                     "../raseq/raseq.rkt"
+                     "../pqueue/pqueue.rkt"
+                     "../orderedseq/orderedseq.rkt"
+                     "../intervaltree/intervaltree.rkt"))
+
 
 @author[@author+email["Stephen Chang" "stchang@racket-lang.org"]]
 
@@ -16,7 +25,7 @@ Finger trees achieve the log append and split bounds by caching a "measurement" 
 
 Based on Hinze and Paterson's JFP 2006 @cite["HP06"] paper.
 
-This implementation currently does not utilize laziness, because preliminary benchmarking indicates that it is not beneficial to do so. Thus, the theoretical bounds from the Hinze and Paterson's paper may not hold when the data structures are used persistently. However, the data structures should still perform well in practice.
+This implementation currently does not utilize laziness, because preliminary benchmarking indicates that it is not beneficial to do so. In other words, the benefits of laziness do not outweigh the practical overhead that laziness incurs. Thus, the theoretical bounds from the Hinze and Paterson's paper may not hold when the data structures are used persistently. However, the data structures should still perform well in practice.
 
 @section{Finger Trees}
 
