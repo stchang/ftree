@@ -1,3 +1,3 @@
 #lang racket
 (require "orderedseq.rkt")
-(provide (all-from-out "ftree.rkt"))
+(provide (all-from-out "orderedseq.rkt"))

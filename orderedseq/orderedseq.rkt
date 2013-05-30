@@ -25,9 +25,10 @@
          os-top os-remove-top os-bot os-remove-bot
          os-merge)
 
-
+;; os∅ is the "measure" of an empty ordered seq
 (struct os∅struct ())
 (define os∅ (os∅struct))
+
 ;; cmp must not include equality, so < is ok but not <=
 ;; because partitioning always assumes the equality elements are on the right
 (struct ftree:oseq ftree (cmp)
@@ -85,16 +86,3 @@
                  (ft-split (λ (y) (not (or (cmp y x) (equal? y x)))) os1)])
              (ft-append os1<=x (ft-consL x (merge xs os1>x))))]))
   (merge os1 os2))
-;
-;(define (pq-top+rest pq)
-;  (match-define (ftree:pqueue _ sz ⊕ FT) pq)
-;  (match/values (FT-split-tree (λ (x) (equal? (sz FT) x)) pq∅ sz ⊕ FT)
-;    [(l x r) (values x (ftree:pqueue pq∅ sz ⊕ (FT-append sz ⊕ l r)))]))
-;
-;(define (pq-top pq)
-;  (match-define (ftree:pqueue _ sz _ FT) pq)
-;  (sz FT))
-;
-;(define (pq-rest pq)
-;  (define-values (x rst) (pq-top+rest pq))
-;  rst)

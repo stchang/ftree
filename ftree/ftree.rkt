@@ -6,7 +6,7 @@
 (provide mk-ftree empty-ft ft-empty? ftree?
          ft-consL ft-consR 
          ft-hd+tlL ft-hd+tlR ft-hdL ft-tlL ft-hdR ft-tlR
-         ft-append ft-split
+         ft-append ft-split ft-take-until ft-drop-until
          gen:ft)
 
 ;; internal FT provides
@@ -443,3 +443,10 @@
          (values empty-digit x xs)
          (let-values ([(l y r) (split-digit p? vx sz ⊕ xs)])
            (values (digit-consL x l) y r)))]))
+
+(define (ft-take-until p? ft)
+  (define-values (l r) (ft-split p? ft))
+  l)
+(define (ft-drop-until p? ft)
+  (define-values (l r) (ft-split p? ft))
+  r)

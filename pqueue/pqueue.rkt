@@ -4,8 +4,10 @@
 (provide mk-pqueue pqueue? pq-empty? 
          pq-top+rest pq-top pq-rest)
 
+;; pq∅ is the "measure" of an empty pqueue
 (struct pq∅struct ())
 (define pq∅ (pq∅struct))
+
 (struct ftree:pqueue ftree ()
   #:methods gen:ft
   [(define (gen:mk pq ∅ sz ⊕ FT) (ftree:pqueue pq∅ sz ⊕ FT))])
