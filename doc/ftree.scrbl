@@ -29,7 +29,7 @@ This implementation currently does not utilize laziness, because preliminary ben
 
 @section{Finger Trees}
 
-@defmodule[ftree]
+@defmodule[ftree #:use-sources ("../ftree/ftree.rkt")]
 
 @defproc[(mk-ftree [∅ any/c][elem-sz (-> any/c any/c)][⊕ (-> any/c any/c any/c)]) ftree?]{
   Creates an empty @deftech{finger tree}. @racket[∅] is the "measurement" of the empty tree. @racket[elem-sz] takes an element in the tree and returns the measurement for that element. Finally, @racket[⊕] must be an associative binary operation that combines measurements.}
@@ -79,7 +79,7 @@ This implementation currently does not utilize laziness, because preliminary ben
 
 @section{Random-Access Sequences}
 
-@defmodule[raseq]
+@defmodule[raseq #:use-sources ("../raseq/raseq.rkt")]
 
 @defproc[(raseq? [x any/c]) boolean?]{Identifies random-access sequences.}
 @defproc[(mk-raseq) raseq?]{Makes an empty random access sequence.}
@@ -96,7 +96,7 @@ This implementation currently does not utilize laziness, because preliminary ben
 
 @section{Priority Queues}
 
-@defmodule[pqueue]
+@defmodule[pqueue #:use-sources ("../pqueue/pqueue.rkt")]
 
 @defproc[(pqueue? [x any/c]) boolean?]{Identifies priority queues.}
 @defproc[(mk-pqueue [<= (-> any/c any/c boolean?)]) pqueue?]{
@@ -112,7 +112,7 @@ This implementation currently does not utilize laziness, because preliminary ben
 
 @section{Ordered Sequences}
 
-@defmodule[orderedseq]
+@defmodule[orderedseq #:use-sources ("../orderedseq/orderedseq.rkt")]
 
 From Hinze and Paterson's paper:
  "ordered sequences [can be seen as an optimization] of, and subsume, priority
@@ -149,7 +149,7 @@ Differences with pqueues:
 
 @section{Interval Trees}
 
-@defmodule[intervaltree]
+@defmodule[intervaltree #:use-sources ("../intervaltree/intervaltree.rkt")]
 
 Represents sets of intervals where an interval is a pair of real numbers, lo and hi, with lo <= hi. Intervals are sorted in ascending order of the lo's, when added via @racket[it-insert] (but not with any of the @racket[ft-cons] functions). The cached measure is an interval where the lo is the lo of the rightmost element and the hi is the maximum of the element hi's.
 
