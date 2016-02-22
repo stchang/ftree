@@ -1,20 +1,20 @@
 #lang scribble/manual
 @(require scribble/eval
-          (for-label "../ftree/ftree.rkt"
-                     "../raseq/raseq.rkt"
-                     "../pqueue/pqueue.rkt"
-                     "../orderedseq/orderedseq.rkt"
-                     "../intervaltree/intervaltree.rkt")
+          (for-label ftree/ftree/ftree
+                     ftree/raseq/raseq
+                     ftree/pqueue/pqueue
+                     ftree/orderedseq/orderedseq
+                     ftree/intervaltree/intervaltree)
           racket/base)
 
 @title{Finger Trees}
 
 @(define the-eval (make-base-eval))
-@(the-eval '(require "../ftree/ftree.rkt"
-                     "../raseq/raseq.rkt"
-                     "../pqueue/pqueue.rkt"
-                     "../orderedseq/orderedseq.rkt"
-                     "../intervaltree/intervaltree.rkt"))
+@(the-eval '(require ftree/ftree/ftree
+                     ftree/raseq/raseq
+                     ftree/pqueue/pqueue
+                     ftree/orderedseq/orderedseq
+                     ftree/intervaltree/intervaltree))
 
 
 @author[@author+email["Stephen Chang" "stchang@racket-lang.org"]]
@@ -29,7 +29,7 @@ This implementation currently does not utilize laziness, because preliminary ben
 
 @section{Finger Trees}
 
-@defmodule[ftree #:use-sources ("../ftree/ftree.rkt")]
+@defmodule[ftree #:use-sources (ftree/ftree/ftree)]
 
 @defproc[(mk-ftree [∅ any/c][elem-sz (-> any/c any/c)][⊕ (-> any/c any/c any/c)]) ftree?]{
   Creates an empty @deftech{finger tree}. @racket[∅] is the "measurement" of the empty tree. @racket[elem-sz] takes an element in the tree and returns the measurement for that element. Finally, @racket[⊕] must be an associative binary operation that combines measurements.}
@@ -67,7 +67,8 @@ This implementation currently does not utilize laziness, because preliminary ben
   Splits the given finger tree into two parts such that the given predicate is false for all elements in the first part and true for all elements in the second part.}
 
 @defthing[gen:ft any/c]{
-  A @tech{generic interface} (see @secref["struct-generics"]) for finger tree-based data structures. Any data structure that implements this interface may use the operations above.
+  A @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{generic interface} (see
+  @secref[#:doc '(lib "scribblings/reference/reference.scrbl") "struct-generics"]) for finger tree-based data structures. Any data structure that implements this interface may use the operations above.
 @itemize[
   @item{@racket[gen:mk : (-> any/c any/c (-> any/c any/c) any/c any/c any/c)] : Builds a new finger tree based on an existing finger tree. Takes five arguments: @racket[existing-ftree ∅ sz-fn ⊕ internal-ftree].}]}
           
@@ -79,7 +80,7 @@ This implementation currently does not utilize laziness, because preliminary ben
 
 @section{Random-Access Sequences}
 
-@defmodule[raseq #:use-sources ("../raseq/raseq.rkt")]
+@defmodule[raseq #:use-sources (ftree/raseq/raseq)]
 
 @defproc[(raseq? [x any/c]) boolean?]{Identifies random-access sequences.}
 @defproc[(mk-raseq) raseq?]{Makes an empty random access sequence.}
@@ -96,7 +97,7 @@ This implementation currently does not utilize laziness, because preliminary ben
 
 @section{Priority Queues}
 
-@defmodule[pqueue #:use-sources ("../pqueue/pqueue.rkt")]
+@defmodule[pqueue #:use-sources (ftree/pqueue/pqueue)]
 
 @defproc[(pqueue? [x any/c]) boolean?]{Identifies priority queues.}
 @defproc[(mk-pqueue [<= (-> any/c any/c boolean?)]) pqueue?]{
@@ -112,7 +113,7 @@ This implementation currently does not utilize laziness, because preliminary ben
 
 @section{Ordered Sequences}
 
-@defmodule[orderedseq #:use-sources ("../orderedseq/orderedseq.rkt")]
+@defmodule[orderedseq #:use-sources (ftree/orderedseq/orderedseq)]
 
 From Hinze and Paterson's paper:
  "ordered sequences [can be seen as an optimization] of, and subsume, priority
@@ -149,7 +150,7 @@ Differences with pqueues:
 
 @section{Interval Trees}
 
-@defmodule[intervaltree #:use-sources ("../intervaltree/intervaltree.rkt")]
+@defmodule[intervaltree #:use-sources (ftree/intervaltree/intervaltree)]
 
 Represents sets of intervals where an interval is a pair of real numbers, lo and hi, with lo <= hi. Intervals are sorted in ascending order of the lo's, when added via @racket[it-insert] (but not with any of the @racket[ft-cons] functions). The cached measure is an interval where the lo is the lo of the rightmost element and the hi is the maximum of the element hi's.
 
