@@ -67,7 +67,8 @@ This implementation currently does not utilize laziness, because preliminary ben
   Splits the given finger tree into two parts such that the given predicate is false for all elements in the first part and true for all elements in the second part.}
 
 @defthing[gen:ft any/c]{
-  A @tech{generic interface} (see @secref["struct-generics"]) for finger tree-based data structures. Any data structure that implements this interface may use the operations above.
+  A @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{generic interface} (see
+  @secref[#:doc '(lib "scribblings/reference/reference.scrbl") "struct-generics"]) for finger tree-based data structures. Any data structure that implements this interface may use the operations above.
 @itemize[
   @item{@racket[gen:mk : (-> any/c any/c (-> any/c any/c) any/c any/c any/c)] : Builds a new finger tree based on an existing finger tree. Takes five arguments: @racket[existing-ftree ∅ sz-fn ⊕ internal-ftree].}]}
           
